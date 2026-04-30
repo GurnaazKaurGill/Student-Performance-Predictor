@@ -223,4 +223,4 @@ Development completed up to Phase 4 (Data Preprocessing).
 
 ## 15. Author
 
-Gurnaaz
+Gurnaaz Kaur
