@@ -1,4 +1,5 @@
 from src.data.ingestion import DataIngestion
+from src.data.validation import DataValidation
 
 if __name__ == "__main__":
     ingestion = DataIngestion(
@@ -8,3 +9,9 @@ if __name__ == "__main__":
 
     df = ingestion.run()
     print(df.head())
+    print(df.info())
+
+    validator = DataValidation(df)
+    validator.validate()
+
+    print("Data validation passed")
