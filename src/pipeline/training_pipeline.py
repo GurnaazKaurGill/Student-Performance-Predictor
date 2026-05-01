@@ -1,5 +1,7 @@
+from sklearn.model_selection import train_test_split
 from src.data.ingestion import DataIngestion
 from src.data.validation import DataValidation
+from src.features.engineering import FeatureEngineering
 from src.features.preprocessing import DataPreprocessing
 
 if __name__ == "__main__":
@@ -17,13 +19,27 @@ if __name__ == "__main__":
 
     print("Data validation passed")
 
+    fe = FeatureEngineering(df)
+    df = fe.create_features()
+
+    train_df, test_df = train_test_split(
+        df, 
+        test_size = 0.2, 
+        random_state= 42
+    )
+
+    print("Train shape: ", train_df.shape)
+    print("Test shape: ", test_df.shape)
+
 
     preprocessor = DataPreprocessing()
     preprocessor.create_pipeline()
 
-    X, y = preprocessor.fit_transform(df)
+    X_train, y_train = preprocessor.fit_transform(train_df)
+    X_test = preprocessor.transform(test_df)
+    y_test = test_df["math_score"]
 
     preprocessor.save()
 
     print("Preprocessing Completed")
-    print("Feature Shape: ", X.shape)
+    print("Train features Shape: ", X_train.shape)

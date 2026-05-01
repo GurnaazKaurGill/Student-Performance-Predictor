@@ -9,7 +9,13 @@ import joblib
 
 class DataPreprocessing:
     def __init__(self):
-        self.num_features = ["reading_score", "writing_score"]
+        self.num_features = [
+            "reading_score",
+            "writing_score",
+            "avg_score",
+            "score_gap"
+            ]
+            
         self.cat_features = [
             "gender",
             "parental_level_of_education",
