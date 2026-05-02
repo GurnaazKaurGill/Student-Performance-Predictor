@@ -13,7 +13,7 @@ This project implements a modular machine learning pipeline that includes:
 * Feature engineering
 * Feature preprocessing using scalable pipelines
 * Train-test data splitting
-* Preparation for model training and evaluation
+* Model training and evaluation
 
 The focus is on building a clean, maintainable system rather than a notebook-based prototype.
 
@@ -62,7 +62,7 @@ To estimate student scores and analyze the factors that influence academic outco
 
 ---
 
-## 7. Evaluation Metrics (Planned)
+## 7. Evaluation Metrics
 
 * Root Mean Squared Error (RMSE)
 * Mean Absolute Error (MAE)
@@ -71,7 +71,7 @@ To estimate student scores and analyze the factors that influence academic outco
 
 ## 8. Project Structure
 
-```id="ps4r1q"
+```
 ml_project/
 │
 ├── data/
@@ -90,6 +90,7 @@ ml_project/
 │   │   ├── engineering.py
 │   │
 │   ├── models/
+│   │   ├── train.py
 │   │
 │   ├── pipeline/
 │   │   ├── training_pipeline.py
@@ -190,24 +191,46 @@ Implemented a reusable preprocessing pipeline using Scikit-learn.
 
 ---
 
+### Phase 6: Model Training and Evaluation
+
+* Trained multiple models:
+
+  * Linear Regression
+  * Random Forest Regressor
+
+* Evaluated models using:
+
+  * RMSE
+  * MAE
+
+* Selected the best-performing model based on RMSE
+
+* Saved trained model:
+
+  ```
+  artifacts/model.pkl
+  ```
+
+---
+
 ## 10. How to Run
 
 ### Step 1: Create Virtual Environment
 
-```id="q4mq6y"
+```
 python -m venv venv
 source venv/bin/activate
 ```
 
 ### Step 2: Install Dependencies
 
-```id="pg3r87"
+```
 pip install -r requirements.txt
 ```
 
 ### Step 3: Execute Pipeline
 
-```id="k3c7nf"
+```
 python -m src.pipeline.training_pipeline
 ```
 
@@ -221,23 +244,23 @@ python -m src.pipeline.training_pipeline
 * Feature engineering techniques
 * Scikit-learn Pipeline and ColumnTransformer
 * Train-test splitting and data leakage prevention
+* Model training and evaluation
 * Reproducible workflows
 
 ---
 
 ## 12. Current Status
 
-Development completed up to Phase 5 (Feature Engineering and Data Splitting).
+Development completed up to Phase 6 (Model Training and Evaluation).
 
 ---
 
 ## 13. Future Work
 
-* Model training and evaluation
 * Hyperparameter tuning
-* Model selection and comparison
-* Model persistence
-* Deployment using Flask or FastAPI
+* Model optimization
+* Experiment tracking (MLflow)
+* Model deployment using Flask or FastAPI
 
 ---
 
