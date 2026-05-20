@@ -8,14 +8,15 @@ An end-to-end machine learning project designed to predict student academic perf
 
 This project implements a modular machine learning pipeline that includes:
 
-* Data ingestion from raw sources
-* Data validation and schema enforcement
-* Feature engineering
-* Feature preprocessing using scalable pipelines
-* Train-test data splitting
-* Model training and evaluation
+- Data ingestion from raw sources
+- Data validation and schema enforcement
+- Feature engineering
+- Feature preprocessing using scalable pipelines
+- Train-test data splitting
+- Model training and evaluation
+- Hyperparameter tuning and model optimization
 
-The focus is on building a clean, maintainable system rather than a notebook-based prototype.
+The project focuses on building a clean, maintainable, and production-oriented ML workflow instead of a notebook-only implementation.
 
 ---
 
@@ -27,51 +28,60 @@ The objective is to build a machine learning system capable of predicting studen
 
 ## 3. Objective
 
-To estimate student scores and analyze the factors that influence academic outcomes.
+To estimate student scores and analyze the factors influencing academic outcomes.
 
 ---
 
 ## 4. Problem Type
 
-* Supervised Learning
-* Regression
+- Supervised Learning
+- Regression
 
 ---
 
-## 5. Input Features
+## 5. Dataset
+
+Dataset used:
+- Students Performance in Exams Dataset
+
+The dataset contains demographic and academic information related to student exam performance.
+
+---
+
+## 6. Input Features
 
 ### Categorical Features
-
-* Gender
-* Parental level of education
-* Lunch type
-* Test preparation course
+- Gender
+- Parental level of education
+- Lunch type
+- Test preparation course
 
 ### Numerical Features
-
-* Reading score
-* Writing score
-* Average score (engineered)
-* Score gap (engineered)
-
----
-
-## 6. Target Variable
-
-* Math score
+- Reading score
+- Writing score
+- Average score (engineered feature)
+- Score gap (engineered feature)
 
 ---
 
-## 7. Evaluation Metrics
+## 7. Target Variable
 
-* Root Mean Squared Error (RMSE)
-* Mean Absolute Error (MAE)
+- Math score
 
 ---
 
-## 8. Project Structure
+## 8. Evaluation Metrics
 
-```
+The following regression metrics are used for evaluation:
+
+- Root Mean Squared Error (RMSE)
+- Mean Absolute Error (MAE)
+
+---
+
+## 9. Project Structure
+
+```text
 ml_project/
 │
 ├── data/
@@ -86,18 +96,20 @@ ml_project/
 │   │   ├── validation.py
 │   │
 │   ├── features/
-│   │   ├── preprocessing.py
 │   │   ├── engineering.py
+│   │   ├── preprocessing.py
 │   │
 │   ├── models/
 │   │   ├── train.py
 │   │
 │   ├── pipeline/
 │   │   ├── training_pipeline.py
-│
+│   │
 │   ├── utils/
 │
 ├── artifacts/
+│   ├── model.pkl
+│   ├── preprocessor.pkl
 │
 ├── app/
 │
@@ -108,172 +120,237 @@ ml_project/
 
 ---
 
-## 9. Implementation Details
+## 10. Pipeline Architecture
+
+```text
+Raw Data
+   ↓
+Data Ingestion
+   ↓
+Data Validation
+   ↓
+Feature Engineering
+   ↓
+Train-Test Split
+   ↓
+Preprocessing Pipeline
+   ↓
+Model Training
+   ↓
+Hyperparameter Tuning
+   ↓
+Model Selection
+   ↓
+Model Persistence
+```
+
+---
+
+## 11. Implementation Details
 
 ### Phase 1: Problem Definition
-
-* Defined the machine learning objective
-* Identified input features and target variable
-* Selected regression as the problem type
+- Defined machine learning objective
+- Identified target variable and feature groups
+- Selected regression as the problem type
 
 ---
 
 ### Phase 2: Data Ingestion
-
-* Implemented a modular ingestion component
-* Loaded dataset from CSV
-* Standardized column names
-* Saved processed data for downstream use
+- Implemented modular ingestion component
+- Loaded dataset from CSV
+- Standardized column names
+- Saved processed dataset for downstream use
 
 ---
 
 ### Phase 3: Data Validation
 
-* Enforced schema constraints
-* Validated:
+Implemented validation checks for:
+- Required columns
+- Data types
+- Missing values
+- Duplicate records
+- Numerical ranges
 
-  * Required columns
-  * Data types (with flexible handling)
-  * Missing values
-  * Duplicate records
-  * Value ranges (0–100 for scores)
-* Designed fail-fast validation logic
+Built a fail-fast validation system to ensure data reliability before training.
 
 ---
 
 ### Phase 4: Data Preprocessing
 
-Implemented a reusable preprocessing pipeline using Scikit-learn.
+Implemented reusable preprocessing pipelines using Scikit-learn.
 
 #### Numerical Pipeline
-
-* Missing value imputation using median
-* Feature scaling using StandardScaler
+- Missing value imputation using median
+- Feature scaling using StandardScaler
 
 #### Categorical Pipeline
-
-* Missing value imputation using most frequent value
-* One-hot encoding with unknown category handling
+- Missing value imputation using most frequent values
+- One-hot encoding using OneHotEncoder
 
 #### Combined Using
+- ColumnTransformer
 
-* ColumnTransformer
+#### Output
 
-#### Outputs
+Serialized preprocessing object:
 
-* Transformed feature matrix
-* Serialized preprocessing object stored at:
-
-  ```
-  artifacts/preprocessor.pkl
-  ```
+```text
+artifacts/preprocessor.pkl
+```
 
 ---
 
 ### Phase 5: Feature Engineering and Data Splitting
 
-* Created new features:
+Created engineered features:
+- Average score
+- Score gap between reading and writing scores
 
-  * Average score = (reading_score + writing_score) / 2
-  * Score gap = absolute difference between reading and writing scores
+Performed:
+- 80/20 train-test split
+- Preprocessing fit on training data only
+- Transformation applied to test data separately
 
-* Performed train-test split:
-
-  * 80% training data
-  * 20% testing data
-
-* Applied preprocessing pipeline:
-
-  * Fitted on training data
-  * Transformed both training and test data
-
-* Ensured prevention of data leakage
+This prevents data leakage during evaluation.
 
 ---
 
 ### Phase 6: Model Training and Evaluation
 
-* Trained multiple models:
+Implemented training and evaluation for:
+- Linear Regression
+- Random Forest Regressor
 
-  * Linear Regression
-  * Random Forest Regressor
+Evaluation metrics:
+- RMSE
+- MAE
 
-* Evaluated models using:
-
-  * RMSE
-  * MAE
-
-* Selected the best-performing model based on RMSE
-
-* Saved trained model:
-
-  ```
-  artifacts/model.pkl
-  ```
+Compared multiple models and selected the best-performing baseline model.
 
 ---
 
-## 10. How to Run
+### Phase 7: Hyperparameter Tuning and Model Selection
+
+Implemented hyperparameter optimization using:
+- RandomizedSearchCV
+
+Tuned Random Forest parameters:
+- n_estimators
+- max_depth
+- min_samples_split
+- min_samples_leaf
+- max_features
+
+Applied:
+- 5-fold cross-validation
+
+Compared tuned model performance against baseline models and selected the final best-performing model.
+
+Serialized trained model:
+
+```text
+artifacts/model.pkl
+```
+
+---
+
+## 12. Model Performance
+
+### Baseline Models
+
+| Model | RMSE | MAE |
+|---|---|---|
+| Linear Regression | 5.366 | 4.227 |
+| Random Forest Regressor | 6.259 | 4.954 |
+
+### Tuned Random Forest
+
+| Model | RMSE | MAE |
+|---|---|---|
+| Tuned Random Forest | 6.107 | 4.678 |
+
+### Final Selected Model
+
+- Linear Regression
+
+The Linear Regression model achieved the best RMSE score on the test dataset.
+
+---
+
+## 13. How to Run
 
 ### Step 1: Create Virtual Environment
 
-```
+```bash
 python -m venv venv
 source venv/bin/activate
 ```
 
+---
+
 ### Step 2: Install Dependencies
 
-```
+```bash
 pip install -r requirements.txt
 ```
 
-### Step 3: Execute Pipeline
+---
 
-```
+### Step 3: Execute Training Pipeline
+
+```bash
 python -m src.pipeline.training_pipeline
 ```
 
 ---
 
-## 11. Key Concepts Demonstrated
+## 14. Key Concepts Demonstrated
 
-* Modular pipeline architecture
-* Object-oriented design in ML systems
-* Data validation strategies
-* Feature engineering techniques
-* Scikit-learn Pipeline and ColumnTransformer
-* Train-test splitting and data leakage prevention
-* Model training and evaluation
-* Reproducible workflows
-
----
-
-## 12. Current Status
-
-Development completed up to Phase 6 (Model Training and Evaluation).
+- Modular ML system design
+- Object-oriented programming in ML pipelines
+- Data validation strategies
+- Feature engineering
+- Scikit-learn Pipeline and ColumnTransformer
+- Train-test splitting and leakage prevention
+- Multi-model evaluation
+- Hyperparameter tuning using RandomizedSearchCV
+- Model persistence using Joblib
+- Reproducible ML workflows
 
 ---
 
-## 13. Future Work
+## 15. Current Status
 
-* Hyperparameter tuning
-* Model optimization
-* Experiment tracking (MLflow)
-* Model deployment using Flask or FastAPI
-
----
-
-## 14. Technology Stack
-
-* Python
-* Pandas
-* NumPy
-* Scikit-learn
-* Flask (planned)
+Development completed up to:
+- Hyperparameter tuning
+- Final model selection
 
 ---
 
-## 15. Author
+## 16. Future Improvements
+
+Planned enhancements:
+- Inference pipeline
+- Flask/FastAPI deployment
+- REST API endpoints
+- Experiment tracking using MLflow
+- Docker containerization
+- CI/CD integration
+
+---
+
+## 17. Technology Stack
+
+- Python
+- Pandas
+- NumPy
+- Scikit-learn
+- Joblib
+- Flask (planned)
+
+---
+
+## 18. Author
 
 Gurnaaz Kaur
