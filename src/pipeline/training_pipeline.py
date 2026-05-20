@@ -13,9 +13,6 @@ if __name__ == "__main__":
     )
 
     df = ingestion.run()
-    print(df.head())
-    print(df.info())
-
 
     validator = DataValidation(df)
     validator.validate()
@@ -44,10 +41,43 @@ if __name__ == "__main__":
 
     print("Preprocessing Completed")
     print("Train features Shape: ", X_train.shape)
+    print("Test features shape:", X_test.shape)
 
 
     trainer = ModelTrainer()
-    best_model = trainer.train_and_evaluate(X_train, y_train, X_test, y_test)
+    base_model = trainer.train_and_evaluate(X_train, y_train, X_test, y_test)
 
-    trainer.save_model(best_model)
-    print("Best model saved")
+    # Hyperparameter tuning
+    print("\nTuning Random Forest...")
+
+    tuned_rf = trainer.tune_random_forest(
+        X_train,
+        y_train
+    )
+
+
+    # Evaluate Tuned Model
+    preds = tuned_rf.predict(X_test)
+    rmse, mae = trainer.evaluate(
+        y_test,
+        preds
+    )
+    print(f"Tuned RF -> RMSE: {rmse:.3f}, MAE: {mae:.3f}")
+
+
+    # Compare Models
+    best_existing_rmse = min(
+        result["rmse"]
+        for result in trainer.results.values()
+    )
+
+    if rmse < best_existing_rmse:
+        final_model = tuned_rf
+        print("Tuned Random Forest selected as final model")
+    else:
+        final_model = base_model
+        print("Best base model selected as final model")
+
+    # Final Model
+    trainer.save_model(final_model)
+    print("Final model saved")

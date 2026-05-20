@@ -5,12 +5,13 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error , mean_absolute_error
+from sklearn.model_selection import RandomizedSearchCV
 
 class ModelTrainer:
     def __init__(self):
         self.models= {
             "linear_regression": LinearRegression(),
-            "randm_forest": RandomForestRegressor(random_state=42)
+            "random_forest": RandomForestRegressor(random_state=42)
         }
         self.results = {}
 
@@ -43,6 +44,35 @@ class ModelTrainer:
                 best_model = model
 
         return best_model
+
+    def tune_random_forest(self, X_train, y_train):
+        param_dist = {
+            "n_estimators": [100, 200, 300, 500],
+            "max_depth": [None, 10, 20, 30],
+            "min_samples_split": [2, 5, 10],
+            "min_samples_leaf": [1, 2, 4],
+            "max_features": ["sqrt", "log2"]
+        }
+
+        rf = RandomForestRegressor(random_state=42)
+
+        search = RandomizedSearchCV(
+            estimator=rf,
+            param_distributions=param_dist,
+            n_iter=20,
+            cv=5,
+            scoring="neg_root_mean_squared_error",
+            n_jobs=-1,
+            verbose=1,
+            random_state=42
+        )
+
+        search.fit(X_train, y_train)
+
+        print("Best RF Params:", search.best_params_)
+        print("Best CV RMSE:", -search.best_score_)
+
+        return search.best_estimator_
 
     def save_model(self, model, path="artifacts/model.pkl"):
         os.makedirs(os.path.dirname(path), exist_ok=True)
