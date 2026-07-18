@@ -1,6 +1,6 @@
 # Student Performance Predictor
 
-An end-to-end machine learning project designed to predict student academic performance using a structured, production-style pipeline.
+An end-to-end machine learning project that predicts a student's math score using demographic and academic-preparation information, built as a modular, production-style pipeline with a working inference API.
 
 ---
 
@@ -15,6 +15,8 @@ This project implements a modular machine learning pipeline that includes:
 - Train-test data splitting
 - Model training and evaluation
 - Hyperparameter tuning and model optimization
+- An inference pipeline for serving predictions on new data
+- A FastAPI application exposing the model as a REST API
 
 The project focuses on building a clean, maintainable, and production-oriented ML workflow instead of a notebook-only implementation.
 
@@ -22,13 +24,13 @@ The project focuses on building a clean, maintainable, and production-oriented M
 
 ## 2. Problem Statement
 
-The objective is to build a machine learning system capable of predicting student performance based on demographic and academic features.
+The objective is to build a machine learning system capable of predicting a student's math score using demographic and academic-preparation information that would realistically be known **before** the student takes the exam.
 
 ---
 
 ## 3. Objective
 
-To estimate student scores and analyze the factors influencing academic outcomes.
+To estimate a student's math score from demographic and preparatory factors, and to identify which of these factors relate to academic outcomes.
 
 ---
 
@@ -42,7 +44,7 @@ To estimate student scores and analyze the factors influencing academic outcomes
 ## 5. Dataset
 
 Dataset used:
-- Students Performance in Exams Dataset
+- Students Performance in Exams Dataset (1,000 records)
 
 The dataset contains demographic and academic information related to student exam performance.
 
@@ -52,15 +54,16 @@ The dataset contains demographic and academic information related to student exa
 
 ### Categorical Features
 - Gender
+- Race/ethnicity
 - Parental level of education
 - Lunch type
 - Test preparation course
 
-### Numerical Features
-- Reading score
-- Writing score
-- Average score (engineered feature)
-- Score gap (engineered feature)
+### Numerical Features (engineered)
+- `completed_prep` — binary flag, whether the student completed the test preparation course
+- `standard_lunch` — binary flag, whether the student receives standard (vs. free/reduced) lunch
+
+**Note on excluded features:** `reading_score` and `writing_score` are deliberately **not** used as input features, even though they exist in the raw dataset. These two scores come from the same exam sitting as `math_score`, the target variable, and would not be available in any realistic use case where the goal is predicting performance ahead of the exam. An earlier version of this project used them as features, which produced an artificially low error (RMSE ≈ 5.3) by essentially leaking the answer. This was identified and corrected — see Section 12 for before/after numbers.
 
 ---
 
@@ -72,8 +75,6 @@ The dataset contains demographic and academic information related to student exa
 
 ## 8. Evaluation Metrics
 
-The following regression metrics are used for evaluation:
-
 - Root Mean Squared Error (RMSE)
 - Mean Absolute Error (MAE)
 
@@ -82,13 +83,13 @@ The following regression metrics are used for evaluation:
 ## 9. Project Structure
 
 ```text
-ml_project/
+Student-Performance-Predictor/
 │
 ├── data/
 │   ├── raw/
+│   │   └── students.csv
 │   ├── processed/
-│
-├── notebooks/
+│       └── cleaned.csv
 │
 ├── src/
 │   ├── data/
@@ -104,15 +105,19 @@ ml_project/
 │   │
 │   ├── pipeline/
 │   │   ├── training_pipeline.py
+│   │   ├── predict_pipeline.py
 │   │
 │   ├── utils/
+│       ├── logger.py
 │
 ├── artifacts/
 │   ├── model.pkl
 │   ├── preprocessor.pkl
 │
 ├── app/
+│   ├── app.py
 │
+├── logs/
 ├── requirements.txt
 ├── README.md
 ├── .gitignore
@@ -129,7 +134,7 @@ Data Ingestion
    ↓
 Data Validation
    ↓
-Feature Engineering
+Feature Engineering (leakage-free)
    ↓
 Train-Test Split
    ↓
@@ -142,6 +147,8 @@ Hyperparameter Tuning
 Model Selection
    ↓
 Model Persistence
+   ↓
+Inference Pipeline  →  FastAPI REST API
 ```
 
 ---
@@ -176,7 +183,17 @@ Built a fail-fast validation system to ensure data reliability before training.
 
 ---
 
-### Phase 4: Data Preprocessing
+### Phase 4: Feature Engineering (corrected)
+
+Created engineered features using only columns that would be known in advance:
+- `completed_prep` — derived from test preparation course completion
+- `standard_lunch` — derived from lunch type
+
+`reading_score` and `writing_score` are excluded from feature engineering entirely, since they are outcomes of the same exam sitting as the target variable.
+
+---
+
+### Phase 5: Data Preprocessing
 
 Implemented reusable preprocessing pipelines using Scikit-learn.
 
@@ -189,7 +206,7 @@ Implemented reusable preprocessing pipelines using Scikit-learn.
 - One-hot encoding using OneHotEncoder
 
 #### Combined Using
-- ColumnTransformer
+- ColumnTransformer, with an explicit allow-list of permitted feature columns (rather than "all columns except the target"), so no future column can silently leak into the model
 
 #### Output
 
@@ -201,13 +218,8 @@ artifacts/preprocessor.pkl
 
 ---
 
-### Phase 5: Feature Engineering and Data Splitting
+### Phase 6: Train-Test Splitting
 
-Created engineered features:
-- Average score
-- Score gap between reading and writing scores
-
-Performed:
 - 80/20 train-test split
 - Preprocessing fit on training data only
 - Transformation applied to test data separately
@@ -216,7 +228,7 @@ This prevents data leakage during evaluation.
 
 ---
 
-### Phase 6: Model Training and Evaluation
+### Phase 7: Model Training and Evaluation
 
 Implemented training and evaluation for:
 - Linear Regression
@@ -230,7 +242,7 @@ Compared multiple models and selected the best-performing baseline model.
 
 ---
 
-### Phase 7: Hyperparameter Tuning and Model Selection
+### Phase 8: Hyperparameter Tuning and Model Selection
 
 Implemented hyperparameter optimization using:
 - RandomizedSearchCV
@@ -255,26 +267,52 @@ artifacts/model.pkl
 
 ---
 
+### Phase 9: Inference Pipeline
+
+Implemented `PredictPipeline`, which:
+- Loads the saved model and preprocessor from `artifacts/`
+- Accepts a single new student's details as input
+- Runs the same feature engineering and preprocessing steps used during training
+- Returns a predicted math score
+
+---
+
+### Phase 10: REST API
+
+Implemented a FastAPI application (`app/app.py`) exposing:
+- `GET /` — health check
+- `POST /predict` — accepts a student's demographic and preparation details as JSON, returns a predicted math score
+
+Input validation is handled automatically through a Pydantic model (`StudentInput`), which rejects malformed or incomplete requests with a clear error before they ever reach the model. FastAPI also auto-generates an interactive documentation page at `/docs`, where the endpoint can be tested directly from the browser.
+
+---
+
 ## 12. Model Performance
 
-### Baseline Models
+### Before correcting data leakage
+
+Earlier versions of this project used `reading_score` and `writing_score` as input features. Since these come from the same exam sitting as the target (`math_score`), this produced artificially low error:
 
 | Model | RMSE | MAE |
 |---|---|---|
 | Linear Regression | 5.366 | 4.227 |
 | Random Forest Regressor | 6.259 | 4.954 |
 
-### Tuned Random Forest
+### After correcting data leakage (current, honest results)
+
+With `reading_score` and `writing_score` removed, using only demographic and preparatory features:
 
 | Model | RMSE | MAE |
 |---|---|---|
-| Tuned Random Forest | 6.107 | 4.678 |
+| Linear Regression | 14.160 | 11.270 |
+| Random Forest Regressor (default) | 15.699 | 12.345 |
+| Random Forest Regressor (tuned) | 14.580 | 11.627 |
 
 ### Final Selected Model
 
-- Linear Regression
+- **Linear Regression**
 
-The Linear Regression model achieved the best RMSE score on the test dataset.
+The tuned Random Forest did not outperform Linear Regression on the held-out test set, so Linear Regression was automatically selected as the final model. The higher RMSE compared to the earlier (leaked) version is expected and correct — it reflects the model being evaluated on a genuinely harder, more realistic problem.
 
 ---
 
@@ -284,10 +322,8 @@ The Linear Regression model achieved the best RMSE score on the test dataset.
 
 ```bash
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate      # On Windows: venv\Scripts\activate
 ```
-
----
 
 ### Step 2: Install Dependencies
 
@@ -295,12 +331,32 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
----
-
-### Step 3: Execute Training Pipeline
+### Step 3: Run the Training Pipeline
 
 ```bash
 python -m src.pipeline.training_pipeline
+```
+
+This runs ingestion → validation → feature engineering → preprocessing → training → tuning → model selection, and saves `artifacts/model.pkl` and `artifacts/preprocessor.pkl`.
+
+### Step 4: Run the API Server
+
+```bash
+uvicorn app.app:app --reload
+```
+
+Then open `http://127.0.0.1:8000/docs` in a browser to test the `/predict` endpoint interactively, or send a request directly:
+
+```bash
+curl -X POST http://127.0.0.1:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gender": "female",
+    "race/ethnicity": "group B",
+    "parental_level_of_education": "bachelor'\''s degree",
+    "lunch": "standard",
+    "test_preparation_course": "completed"
+  }'
 ```
 
 ---
@@ -310,12 +366,16 @@ python -m src.pipeline.training_pipeline
 - Modular ML system design
 - Object-oriented programming in ML pipelines
 - Data validation strategies
-- Feature engineering
+- Data leakage identification and correction
+- Feature engineering with explicit, allow-list based feature selection
 - Scikit-learn Pipeline and ColumnTransformer
 - Train-test splitting and leakage prevention
 - Multi-model evaluation
 - Hyperparameter tuning using RandomizedSearchCV
 - Model persistence using Joblib
+- Inference pipeline design
+- REST API development with FastAPI and Pydantic
+- Structured logging
 - Reproducible ML workflows
 
 ---
@@ -323,20 +383,21 @@ python -m src.pipeline.training_pipeline
 ## 15. Current Status
 
 Development completed up to:
-- Hyperparameter tuning
-- Final model selection
+- Hyperparameter tuning and final model selection
+- Inference pipeline
+- FastAPI REST API with automatic request validation
 
 ---
 
 ## 16. Future Improvements
 
 Planned enhancements:
-- Inference pipeline
-- Flask/FastAPI deployment
-- REST API endpoints
+- Automated unit tests
+- Configuration file for paths and hyperparameters
 - Experiment tracking using MLflow
 - Docker containerization
 - CI/CD integration
+- Expansion to a larger, more diverse dataset
 
 ---
 
@@ -347,7 +408,9 @@ Planned enhancements:
 - NumPy
 - Scikit-learn
 - Joblib
-- Flask (planned)
+- FastAPI
+- Pydantic
+- Uvicorn
 
 ---
 
