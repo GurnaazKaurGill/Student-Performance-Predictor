@@ -4,4 +4,5 @@ __pycache__/
 venv/
 artifacts/
 .ipynb_checkpoints/
-logs/.DS_Store
+logs/
+.DS_Store
