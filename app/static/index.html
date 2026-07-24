@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Performance Predictor</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <main class="card">
+    <h1>Student Performance Predictor</h1>
+    <p class="subtitle">Predicts a student's math score from demographic and preparation details.</p>
+
+    <form id="predict-form">
+      <label for="gender">Gender</label>
+      <select id="gender" required>
+        <option value="female">Female</option>
+        <option value="male">Male</option>
+      </select>
+
+      <label for="race">Race / Ethnicity</label>
+      <select id="race" required>
+        <option value="group A">Group A</option>
+        <option value="group B">Group B</option>
+        <option value="group C">Group C</option>
+        <option value="group D">Group D</option>
+        <option value="group E">Group E</option>
+      </select>
+
+      <label for="education">Parental Level of Education</label>
+      <select id="education" required>
+        <option value="some high school">Some High School</option>
+        <option value="high school">High School</option>
+        <option value="some college">Some College</option>
+        <option value="associate's degree">Associate's Degree</option>
+        <option value="bachelor's degree">Bachelor's Degree</option>
+        <option value="master's degree">Master's Degree</option>
+      </select>
+
+      <label for="lunch">Lunch Type</label>
+      <select id="lunch" required>
+        <option value="standard">Standard</option>
+        <option value="free/reduced">Free/Reduced</option>
+      </select>
+
+      <label for="prep">Test Preparation Course</label>
+      <select id="prep" required>
+        <option value="none">None</option>
+        <option value="completed">Completed</option>
+      </select>
+
+      <button type="submit">Predict Math Score</button>
+    </form>
+
+    <div id="result" class="result hidden"></div>
+    <div id="error" class="error hidden"></div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

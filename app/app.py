@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from src.pipeline.predict_pipeline import PredictPipeline
@@ -15,6 +16,15 @@ app = FastAPI(
 # Loaded once at startup, same reasoning as before: loading a model from
 # disk on every request would be slow.
 pipeline = PredictPipeline()
+
+
+@app.on_event("startup")
+def announce_urls():
+    print("\n" + "=" * 60)
+    print("Student Performance Predictor is ready:")
+    print("  Frontend:  http://127.0.0.1:8000/ui/")
+    print("  API docs:  http://127.0.0.1:8000/docs")
+    print("=" * 60 + "\n")
 
 
 class StudentInput(BaseModel):
@@ -53,3 +63,6 @@ def predict(student: StudentInput):
     except Exception as e:
         logger.error(f"Prediction failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+app.mount("/ui", StaticFiles(directory="app/static", html=True), name="static")
