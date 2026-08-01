@@ -65,3 +65,17 @@ if __name__ == "__main__":
 
     trainer.save_model(final_model)
     logger.info("Final model saved")
+
+    # Save a sample of the transformed training data as a "background"
+    # reference for SHAP. SHAP explains a prediction by comparing it
+    # against what a typical input looks like; this sample is that
+    # baseline. 100 rows is plenty for a dataset this size and keeps
+    # explanation computation fast.
+    import joblib
+    import numpy as np
+
+    background_sample = X_train[np.random.RandomState(42).choice(
+        X_train.shape[0], size=min(100, X_train.shape[0]), replace=False
+    )]
+    joblib.dump(background_sample, "artifacts/background_data.pkl")
+    logger.info("Background data sample saved for explainability")
