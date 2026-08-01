@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from src.pipeline.predict_pipeline import PredictPipeline
+from src.pipeline.explain_pipeline import ExplainPipeline
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -16,6 +17,7 @@ app = FastAPI(
 # Loaded once at startup, same reasoning as before: loading a model from
 # disk on every request would be slow.
 pipeline = PredictPipeline()
+explainer = ExplainPipeline()
 
 
 @app.on_event("startup")
@@ -58,11 +60,23 @@ def predict(student: StudentInput):
     try:
         input_dict = student.model_dump(by_alias=True)
         prediction = pipeline.predict(input_dict)
-        return {"predicted_math_score": prediction}
+        explanation = explainer.explain(input_dict)
+
+        return {
+            "predicted_math_score": prediction,
+            "base_value": explanation["base_value"],
+            "contributions": explanation["contributions"],
+        }
 
     except Exception as e:
         logger.error(f"Prediction failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Serves everything in app/static/ as static files. html=True means
+# requesting the root path serves index.html automatically.
+# This must be added AFTER the /predict and / routes above, since
+# FastAPI checks routes in the order they're defined, and a route
+# mounted at "/" would otherwise intercept every request before it
+# reaches /predict.
 app.mount("/ui", StaticFiles(directory="app/static", html=True), name="static")
