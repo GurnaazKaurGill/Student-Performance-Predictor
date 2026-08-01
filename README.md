@@ -1,6 +1,6 @@
 # Student Performance Predictor
 
-An end-to-end machine learning project that predicts a student's math score using demographic and academic-preparation information, built as a modular, production-style pipeline with a working inference API.
+An end-to-end machine learning project that predicts a student's math score using demographic and academic-preparation information, built as a modular, production-style pipeline with a working inference API, a browser-based frontend, and per-prediction explainability.
 
 ---
 
@@ -16,7 +16,9 @@ This project implements a modular machine learning pipeline that includes:
 - Model training and evaluation
 - Hyperparameter tuning and model optimization
 - An inference pipeline for serving predictions on new data
+- SHAP-based explainability for individual predictions
 - A FastAPI application exposing the model as a REST API
+- A browser-based frontend for interacting with the model directly
 
 The project focuses on building a clean, maintainable, and production-oriented ML workflow instead of a notebook-only implementation.
 
@@ -30,7 +32,7 @@ The objective is to build a machine learning system capable of predicting a stud
 
 ## 3. Objective
 
-To estimate a student's math score from demographic and preparatory factors, and to identify which of these factors relate to academic outcomes.
+To estimate a student's math score from demographic and preparatory factors, to identify which of these factors relate to academic outcomes, and to make each individual prediction interpretable rather than a black-box output.
 
 ---
 
@@ -106,6 +108,7 @@ Student-Performance-Predictor/
 │   ├── pipeline/
 │   │   ├── training_pipeline.py
 │   │   ├── predict_pipeline.py
+│   │   ├── explain_pipeline.py
 │   │
 │   ├── utils/
 │       ├── logger.py
@@ -113,11 +116,17 @@ Student-Performance-Predictor/
 ├── artifacts/
 │   ├── model.pkl
 │   ├── preprocessor.pkl
+│   ├── background_data.pkl
 │
 ├── app/
 │   ├── app.py
+│   ├── static/
+│       ├── index.html
+│       ├── style.css
+│       ├── script.js
 │
 ├── logs/
+├── notebooks/
 ├── requirements.txt
 ├── README.md
 ├── .gitignore
@@ -146,9 +155,9 @@ Hyperparameter Tuning
    ↓
 Model Selection
    ↓
-Model Persistence
+Model Persistence + Background Data Sample
    ↓
-Inference Pipeline  →  FastAPI REST API
+Inference Pipeline  →  Explainability Pipeline  →  FastAPI REST API  →  Frontend
 ```
 
 ---
@@ -265,6 +274,8 @@ Serialized trained model:
 artifacts/model.pkl
 ```
 
+A sample of the transformed training data is also saved as `artifacts/background_data.pkl`, used as the reference distribution for explainability in Phase 10.
+
 ---
 
 ### Phase 9: Inference Pipeline
@@ -277,13 +288,36 @@ Implemented `PredictPipeline`, which:
 
 ---
 
-### Phase 10: REST API
+### Phase 10: Explainability
+
+Implemented `ExplainPipeline`, using SHAP (`shap.LinearExplainer`), which:
+- Loads the saved model, preprocessor, and background data sample
+- Computes exact SHAP values for a single prediction (exact, not approximated, since the final model is Linear Regression)
+- Returns a base value (the average prediction across the background sample) and a list of each relevant feature's contribution, in math-score points, sorted by magnitude
+- For one-hot encoded categorical features, only the category the student actually has is returned, avoiding misleading near-zero entries for unselected categories
+
+This turns each prediction from a single opaque number into a breakdown of which specific factors pushed it up or down, and by how much.
+
+---
+
+### Phase 11: REST API
 
 Implemented a FastAPI application (`app/app.py`) exposing:
 - `GET /` — health check
-- `POST /predict` — accepts a student's demographic and preparation details as JSON, returns a predicted math score
+- `POST /predict` — accepts a student's demographic and preparation details as JSON, returns the predicted math score, the base value, and the per-feature contribution breakdown
 
 Input validation is handled automatically through a Pydantic model (`StudentInput`), which rejects malformed or incomplete requests with a clear error before they ever reach the model. FastAPI also auto-generates an interactive documentation page at `/docs`, where the endpoint can be tested directly from the browser.
+
+---
+
+### Phase 12: Frontend
+
+Implemented a browser-based frontend (`app/static/`), served directly through FastAPI's static file support at `/ui/`:
+- A form for entering a student's demographic and preparation details
+- A results panel showing the predicted score
+- A feature contribution chart, visualizing each factor's positive or negative influence on that specific prediction, with each bar sized relative to the strongest factor in that result
+
+Built with plain HTML, CSS, and JavaScript, calling the same `/predict` endpoint used by `/docs`, with no separate frontend framework or build step required.
 
 ---
 
@@ -312,7 +346,7 @@ With `reading_score` and `writing_score` removed, using only demographic and pre
 
 - **Linear Regression**
 
-The tuned Random Forest did not outperform Linear Regression on the held-out test set, so Linear Regression was automatically selected as the final model. The higher RMSE compared to the earlier (leaked) version is expected and correct — it reflects the model being evaluated on a genuinely harder, more realistic problem.
+The tuned Random Forest did not outperform Linear Regression on the held-out test set, so Linear Regression was automatically selected as the final model. The higher RMSE compared to the earlier (leaked) version is expected and correct — it reflects the model being evaluated on a genuinely harder, more realistic problem. Because the final model is linear, per-prediction SHAP explanations (Phase 10) are computed exactly rather than approximated.
 
 ---
 
@@ -337,15 +371,24 @@ pip install -r requirements.txt
 python -m src.pipeline.training_pipeline
 ```
 
-This runs ingestion → validation → feature engineering → preprocessing → training → tuning → model selection, and saves `artifacts/model.pkl` and `artifacts/preprocessor.pkl`.
+This runs ingestion → validation → feature engineering → preprocessing → training → tuning → model selection, and saves `artifacts/model.pkl`, `artifacts/preprocessor.pkl`, and `artifacts/background_data.pkl`.
 
-### Step 4: Run the API Server
+### Step 4: Run the API and Frontend Server
 
 ```bash
 uvicorn app.app:app --reload
 ```
 
-Then open `http://127.0.0.1:8000/docs` in a browser to test the `/predict` endpoint interactively, or send a request directly:
+On startup, the server prints the exact URLs to visit:
+
+```text
+Frontend:  http://127.0.0.1:8000/ui/
+API docs:  http://127.0.0.1:8000/docs
+```
+
+Visit `http://127.0.0.1:8000/ui/` for the full interactive frontend with prediction explanations, or `http://127.0.0.1:8000/docs` to test the raw API.
+
+Example direct API call:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/predict \
@@ -374,7 +417,9 @@ curl -X POST http://127.0.0.1:8000/predict \
 - Hyperparameter tuning using RandomizedSearchCV
 - Model persistence using Joblib
 - Inference pipeline design
+- Model explainability using SHAP (Shapley values)
 - REST API development with FastAPI and Pydantic
+- Frontend integration with a Python-served backend
 - Structured logging
 - Reproducible ML workflows
 
@@ -385,7 +430,9 @@ curl -X POST http://127.0.0.1:8000/predict \
 Development completed up to:
 - Hyperparameter tuning and final model selection
 - Inference pipeline
+- Per-prediction explainability (SHAP)
 - FastAPI REST API with automatic request validation
+- Browser-based frontend with feature contribution visualization
 
 ---
 
@@ -394,6 +441,8 @@ Development completed up to:
 Planned enhancements:
 - Automated unit tests
 - Configuration file for paths and hyperparameters
+- Prediction intervals (uncertainty quantification) alongside point predictions
+- Subgroup error analysis across demographic groups
 - Experiment tracking using MLflow
 - Docker containerization
 - CI/CD integration
@@ -408,9 +457,11 @@ Planned enhancements:
 - NumPy
 - Scikit-learn
 - Joblib
+- SHAP
 - FastAPI
 - Pydantic
 - Uvicorn
+- HTML / CSS / JavaScript
 
 ---
 
