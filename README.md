@@ -1,6 +1,6 @@
 # Student Performance Predictor
 
-An end-to-end machine learning project that predicts a student's math score using demographic and academic-preparation information, built as a modular, production-style pipeline with a working inference API, a browser-based frontend, and per-prediction explainability.
+An end-to-end machine learning project that predicts a student's math score using demographic and academic-preparation information, built as a modular, production-style pipeline with a working inference API, a browser-based frontend, per-prediction explainability, and a subgroup fairness audit.
 
 ---
 
@@ -17,6 +17,7 @@ This project implements a modular machine learning pipeline that includes:
 - Hyperparameter tuning and model optimization
 - An inference pipeline for serving predictions on new data
 - SHAP-based explainability for individual predictions
+- A subgroup fairness audit across the full test set
 - A FastAPI application exposing the model as a REST API
 - A browser-based frontend for interacting with the model directly
 
@@ -32,7 +33,7 @@ The objective is to build a machine learning system capable of predicting a stud
 
 ## 3. Objective
 
-To estimate a student's math score from demographic and preparatory factors, to identify which of these factors relate to academic outcomes, and to make each individual prediction interpretable rather than a black-box output.
+To estimate a student's math score from demographic and preparatory factors, to identify which of these factors relate to academic outcomes, to make each individual prediction interpretable rather than a black-box output, and to check whether the model's reasoning is applied consistently across demographic groups.
 
 ---
 
@@ -109,6 +110,7 @@ Student-Performance-Predictor/
 │   │   ├── training_pipeline.py
 │   │   ├── predict_pipeline.py
 │   │   ├── explain_pipeline.py
+│   │   ├── fairness_audit.py
 │   │
 │   ├── utils/
 │       ├── logger.py
@@ -117,6 +119,14 @@ Student-Performance-Predictor/
 │   ├── model.pkl
 │   ├── preprocessor.pkl
 │   ├── background_data.pkl
+│
+├── reports/
+│   ├── fairness_audit.csv
+│   ├── fairness_gender.png
+│   ├── fairness_race_ethnicity.png
+│   ├── fairness_parental_education.png
+│   ├── fairness_standard_lunch.png
+│   ├── fairness_completed_test_prep.png
 │
 ├── app/
 │   ├── app.py
@@ -158,6 +168,8 @@ Model Selection
 Model Persistence + Background Data Sample
    ↓
 Inference Pipeline  →  Explainability Pipeline  →  FastAPI REST API  →  Frontend
+                              ↓
+                     Subgroup Fairness Audit (standalone, on full test set)
 ```
 
 ---
@@ -321,6 +333,21 @@ Built with plain HTML, CSS, and JavaScript, calling the same `/predict` endpoint
 
 ---
 
+### Phase 13: Subgroup Fairness Audit
+
+Implemented `fairness_audit.py`, a standalone analysis script (`python -m src.pipeline.fairness_audit`) that extends explainability from a single prediction to the entire held-out test set. For every one of the 200 test-set students, it computes SHAP contributions in a single batched call, then aggregates the results by demographic and behavioral category to answer two distinct questions:
+
+1. **Does the model's reasoning systematically favor or penalize any group?** Measured as the average SHAP contribution per category.
+2. **Is the model's accuracy meaningfully different across groups?** Measured as RMSE per category.
+
+These are deliberately kept separate, since a model can be equally accurate across groups while still reasoning about them differently, or vice versa.
+
+**Key finding:** Race/ethnicity showed the widest spread of any feature audited. Group E averaged a **+5.55** contribution while Group A averaged **−2.56**, an 8-point swing between otherwise-identical students based on this category alone. Group E was also the least accurately predicted group (RMSE 17.12 vs. an overall test RMSE of 14.16), while Group D was the most accurate (RMSE 12.35) — meaning the group the model's reasoning favors most is also the group it predicts least reliably. This is reported here as an honest finding, not resolved or hidden: it raises a legitimate, open question about whether race/ethnicity should remain a permitted input feature at all, which is a judgment call beyond what the audit itself can answer.
+
+Full results are saved to `reports/fairness_audit.csv`, with one bar chart per feature saved alongside it.
+
+---
+
 ## 12. Model Performance
 
 ### Before correcting data leakage
@@ -347,6 +374,8 @@ With `reading_score` and `writing_score` removed, using only demographic and pre
 - **Linear Regression**
 
 The tuned Random Forest did not outperform Linear Regression on the held-out test set, so Linear Regression was automatically selected as the final model. The higher RMSE compared to the earlier (leaked) version is expected and correct — it reflects the model being evaluated on a genuinely harder, more realistic problem. Because the final model is linear, per-prediction SHAP explanations (Phase 10) are computed exactly rather than approximated.
+
+See Phase 13 above for how this accuracy breaks down across demographic subgroups.
 
 ---
 
@@ -388,6 +417,14 @@ API docs:  http://127.0.0.1:8000/docs
 
 Visit `http://127.0.0.1:8000/ui/` for the full interactive frontend with prediction explanations, or `http://127.0.0.1:8000/docs` to test the raw API.
 
+### Step 5 (optional): Run the Fairness Audit
+
+```bash
+python -m src.pipeline.fairness_audit
+```
+
+Prints a full report to the console and saves it, along with charts, to `reports/`.
+
 Example direct API call:
 
 ```bash
@@ -418,6 +455,7 @@ curl -X POST http://127.0.0.1:8000/predict \
 - Model persistence using Joblib
 - Inference pipeline design
 - Model explainability using SHAP (Shapley values)
+- Subgroup fairness analysis, separating model reasoning from model accuracy
 - REST API development with FastAPI and Pydantic
 - Frontend integration with a Python-served backend
 - Structured logging
@@ -431,6 +469,7 @@ Development completed up to:
 - Hyperparameter tuning and final model selection
 - Inference pipeline
 - Per-prediction explainability (SHAP)
+- Subgroup fairness audit across the full test set
 - FastAPI REST API with automatic request validation
 - Browser-based frontend with feature contribution visualization
 
@@ -442,7 +481,7 @@ Planned enhancements:
 - Automated unit tests
 - Configuration file for paths and hyperparameters
 - Prediction intervals (uncertainty quantification) alongside point predictions
-- Subgroup error analysis across demographic groups
+- Confounding analysis (e.g. checking whether the test-preparation effect holds within each parental-education subgroup, or is partly confounded by it)
 - Experiment tracking using MLflow
 - Docker containerization
 - CI/CD integration
@@ -458,6 +497,7 @@ Planned enhancements:
 - Scikit-learn
 - Joblib
 - SHAP
+- Matplotlib
 - FastAPI
 - Pydantic
 - Uvicorn
