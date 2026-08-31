@@ -1,0 +1,18 @@
+group,category,count,avg_shap_contribution,rmse
+Completed Test Prep,Yes,79,3.94,11.9
+Completed Test Prep,No,121,-1.94,15.46
+Gender,Male,103,1.13,13.61
+Gender,Female,97,-1.13,14.72
+Parental Education,Bachelor's Degree,22,3.25,14.23
+Parental Education,Master's Degree,12,1.45,11.95
+Parental Education,Associate's Degree,43,0.38,14.02
+Parental Education,Some College,44,0.27,13.36
+Parental Education,Some High School,42,-2.09,15.97
+Parental Education,High School,37,-2.74,13.67
+Race/Ethnicity,Group E,24,5.55,17.12
+Race/Ethnicity,Group D,60,0.7,12.35
+Race/Ethnicity,Group C,59,-1.38,14.77
+Race/Ethnicity,Group B,37,-1.91,13.1
+Race/Ethnicity,Group A,20,-2.56,15.31
+Standard Lunch,Yes,122,3.34,13.12
+Standard Lunch,No,78,-8.18,15.65
