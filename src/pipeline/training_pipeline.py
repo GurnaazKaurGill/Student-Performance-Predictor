@@ -79,3 +79,43 @@ if __name__ == "__main__":
     )]
     joblib.dump(background_sample, "artifacts/background_data.pkl")
     logger.info("Background data sample saved for explainability")
+
+    # Persist a small metrics summary so the dashboard's Model Performance
+    # page can show real numbers from THIS training run, rather than
+    # numbers hardcoded into the frontend that would silently go stale
+    # the next time the model is retrained.
+    #
+    # The "before leakage" figures are a historical record, not something
+    # this pipeline can regenerate: the current feature engineering
+    # deliberately no longer builds the leaking features at all, so
+    # there is nothing left to re-measure. They are recorded here once,
+    # by hand, from the last run of the superseded code, and labeled
+    # accordingly for the frontend to display honestly.
+    import json
+
+    final_model_name = "Random Forest (tuned)" if final_model is tuned_rf else \
+        [name for name, m in trainer.models.items() if m is final_model][0].replace("_", " ").title()
+
+    metrics = {
+        "before_leakage_note": "Historical record from a superseded version that used reading_score and writing_score as features (later identified as data leakage and removed). Not reproducible from the current pipeline.",
+        "before_leakage": {
+            "linear_regression": {"rmse": 5.366, "mae": 4.227},
+            "random_forest": {"rmse": 6.259, "mae": 4.954},
+        },
+        "after_leakage_fix": {
+            name.replace("_", " ").title(): {
+                "rmse": round(result["rmse"], 3),
+                "mae": round(result["mae"], 3),
+            }
+            for name, result in trainer.results.items()
+        },
+        "tuned_random_forest": {"rmse": round(rmse, 3), "mae": round(mae, 3)},
+        "final_model": final_model_name,
+        "test_set_size": int(X_test.shape[0]),
+        "train_set_size": int(X_train.shape[0]),
+        "feature_count": int(X_train.shape[1]),
+    }
+
+    with open("artifacts/metrics.json", "w") as f:
+        json.dump(metrics, f, indent=2)
+    logger.info("Model metrics saved to artifacts/metrics.json")
