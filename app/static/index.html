@@ -2,67 +2,202 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Performance Predictor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <main class="card">
-    <h1>Student Performance Predictor</h1>
-    <p class="subtitle">Predicts a student's math score from demographic and preparation details.</p>
+  <div class="app">
+    <!-- ============ SIDEBAR ============ -->
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-mark">SP</span>
+        <span class="brand-name">Student Performance Predictor</span>
+      </div>
 
-    <form id="predict-form">
-      <label for="gender">Gender</label>
-      <select id="gender" required>
-        <option value="female">Female</option>
-        <option value="male">Male</option>
-      </select>
+      <ul class="nav-list">
+        <li><button class="nav-item active" data-view="predict">Predict</button></li>
+        <li><button class="nav-item" data-view="model">Model Performance</button></li>
+        <li><button class="nav-item" data-view="fairness">Fairness Audit</button></li>
+        <li><button class="nav-item" data-view="dataset">Dataset Overview</button></li>
+        <li><button class="nav-item" data-view="pipeline">Pipeline</button></li>
+        <li><button class="nav-item" data-view="about">About</button></li>
+      </ul>
 
-      <label for="race">Race / Ethnicity</label>
-      <select id="race" required>
-        <option value="group A">Group A</option>
-        <option value="group B">Group B</option>
-        <option value="group C">Group C</option>
-        <option value="group D">Group D</option>
-        <option value="group E">Group E</option>
-      </select>
+      <a class="sidebar-footer" href="https://github.com/GurnaazKaurGill/Student-Performance-Predictor" target="_blank" rel="noopener">
+        View source on GitHub ↗
+      </a>
+    </nav>
 
-      <label for="education">Parental Level of Education</label>
-      <select id="education" required>
-        <option value="some high school">Some High School</option>
-        <option value="high school">High School</option>
-        <option value="some college">Some College</option>
-        <option value="associate's degree">Associate's Degree</option>
-        <option value="bachelor's degree">Bachelor's Degree</option>
-        <option value="master's degree">Master's Degree</option>
-      </select>
+    <!-- ============ MAIN CONTENT ============ -->
+    <main class="content">
 
-      <label for="lunch">Lunch Type</label>
-      <select id="lunch" required>
-        <option value="standard">Standard</option>
-        <option value="free/reduced">Free/Reduced</option>
-      </select>
+      <!-- ---------- PREDICT ---------- -->
+      <section id="view-predict" class="view active">
+        <header class="view-header">
+          <h1>Predict</h1>
+          <p>Estimate a student's math score from demographic and preparation details, and see exactly which factors shaped the result.</p>
+        </header>
 
-      <label for="prep">Test Preparation Course</label>
-      <select id="prep" required>
-        <option value="none">None</option>
-        <option value="completed">Completed</option>
-      </select>
+        <div class="predict-grid">
+          <div class="panel">
+            <div class="presets">
+              <span class="presets-label">Try an example</span>
+              <div class="presets-buttons">
+                <button type="button" class="preset-btn" data-preset="high">High support</button>
+                <button type="button" class="preset-btn" data-preset="low">Low support</button>
+              </div>
+            </div>
 
-      <button type="submit">Predict Math Score</button>
-    </form>
+            <form id="predict-form" novalidate>
+              <div class="field">
+                <label for="gender">Gender</label>
+                <select id="gender" required>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                </select>
+              </div>
 
-    <div id="result" class="result hidden"></div>
-    <div id="explanation" class="explanation hidden">
-      <h2>What influenced this prediction</h2>
-      <p class="explanation-subtitle">
-        Starting from an average predicted score of <span id="base-value"></span>,
-        here's what pushed this specific prediction up or down.
-      </p>
-      <div id="bars"></div>
-    </div>
-    <div id="error" class="error hidden"></div>
-  </main>
+              <div class="field">
+                <label for="race">Race / ethnicity</label>
+                <select id="race" required>
+                  <option value="group A">Group A</option>
+                  <option value="group B">Group B</option>
+                  <option value="group C">Group C</option>
+                  <option value="group D">Group D</option>
+                  <option value="group E">Group E</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="education">Parental level of education</label>
+                <select id="education" required>
+                  <option value="some high school">Some high school</option>
+                  <option value="high school">High school</option>
+                  <option value="some college">Some college</option>
+                  <option value="associate's degree">Associate's degree</option>
+                  <option value="bachelor's degree">Bachelor's degree</option>
+                  <option value="master's degree">Master's degree</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="lunch">Lunch type</label>
+                <select id="lunch" required>
+                  <option value="standard">Standard</option>
+                  <option value="free/reduced">Free / reduced</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="prep">Test preparation course</label>
+                <select id="prep" required>
+                  <option value="none">Not completed</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+
+              <button type="submit">
+                <span class="btn-label">Predict math score</span>
+                <span class="btn-spinner" aria-hidden="true"></span>
+              </button>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div id="result-empty" class="empty-state">
+              <p>Fill in the form and predict to see the result and a breakdown of what shaped it.</p>
+            </div>
+
+            <div id="result" class="result hidden" aria-live="polite">
+              <span class="result-label">Predicted score</span>
+              <div class="result-value">
+                <span id="score-number"></span>
+                <span class="result-scale">/ 100</span>
+              </div>
+            </div>
+
+            <section id="explanation" class="explanation hidden" aria-live="polite">
+              <h2>What shaped this prediction</h2>
+              <p class="explanation-subtitle">
+                Starting from a baseline of <span id="base-value"></span>,
+                the average score across the training data, here is what
+                moved this result up or down.
+              </p>
+              <div id="bars"></div>
+            </section>
+
+            <div id="error" class="error hidden" role="alert"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- MODEL PERFORMANCE ---------- -->
+      <section id="view-model" class="view">
+        <header class="view-header">
+          <h1>Model Performance</h1>
+          <p>How the final model was chosen, and the real effect of removing a data leakage issue found during development.</p>
+        </header>
+        <div id="model-content" class="loading-text">Loading model metrics…</div>
+      </section>
+
+      <!-- ---------- FAIRNESS AUDIT ---------- -->
+      <section id="view-fairness" class="view">
+        <header class="view-header">
+          <h1>Fairness Audit</h1>
+          <p>Average model contribution and prediction error for every demographic and behavioral group in the held-out test set.</p>
+        </header>
+        <div id="fairness-content" class="loading-text">Loading audit results…</div>
+      </section>
+
+      <!-- ---------- DATASET OVERVIEW ---------- -->
+      <section id="view-dataset" class="view">
+        <header class="view-header">
+          <h1>Dataset Overview</h1>
+          <p>Live summary statistics computed directly from the raw training data.</p>
+        </header>
+        <div id="dataset-content" class="loading-text">Loading dataset summary…</div>
+      </section>
+
+      <!-- ---------- PIPELINE ---------- -->
+      <section id="view-pipeline" class="view">
+        <header class="view-header">
+          <h1>Pipeline</h1>
+          <p>How a prediction actually gets made, end to end. This page is documentation, not a live process.</p>
+        </header>
+
+        <ol class="pipeline-steps">
+          <li><span class="step-num">01</span><div><h3>Data ingestion</h3><p>Raw CSV is loaded and column names are standardized.</p></div></li>
+          <li><span class="step-num">02</span><div><h3>Data validation</h3><p>Fail-fast checks for missing columns, bad types, duplicates, and out-of-range scores.</p></div></li>
+          <li><span class="step-num">03</span><div><h3>Feature engineering</h3><p>Only demographic and preparatory columns are used. Reading and writing scores are deliberately excluded, see Model Performance.</p></div></li>
+          <li><span class="step-num">04</span><div><h3>Preprocessing</h3><p>Scaling and one-hot encoding via an explicit allow-list of permitted columns.</p></div></li>
+          <li><span class="step-num">05</span><div><h3>Training &amp; tuning</h3><p>Linear Regression and Random Forest are compared; Random Forest is tuned with RandomizedSearchCV.</p></div></li>
+          <li><span class="step-num">06</span><div><h3>Explainability</h3><p>SHAP computes an exact, per-prediction breakdown of each feature's effect.</p></div></li>
+          <li><span class="step-num">07</span><div><h3>Serving</h3><p>A FastAPI endpoint exposes the trained model, validated by Pydantic, to this dashboard.</p></div></li>
+        </ol>
+      </section>
+
+      <!-- ---------- ABOUT ---------- -->
+      <section id="view-about" class="view">
+        <header class="view-header">
+          <h1>About</h1>
+          <p>The story behind this project, and what it's actually demonstrating.</p>
+        </header>
+
+        <div class="panel about-panel">
+          <p>This project began as a straightforward regression task: predict a student's math score from their background. Partway through, it turned out an earlier version was quietly cheating, using the student's reading and writing scores, from the same exam sitting, as inputs. That produced a suspiciously good RMSE of about 5.3. Once removed, the honest RMSE landed closer to 14.2. That correction, not the model itself, is the actual center of this project.</p>
+          <p>Everything past that point exists to make the prediction trustworthy rather than just accurate-looking: SHAP explains every individual prediction, and a subgroup fairness audit checks whether that reasoning holds up consistently across demographic groups, rather than assuming it does.</p>
+          <h3>Stack</h3>
+          <p>Python, pandas, scikit-learn, SHAP, FastAPI, Pydantic, with this dashboard as plain HTML, CSS, and JavaScript, no framework or build step.</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
 
   <script src="script.js"></script>
 </body>
